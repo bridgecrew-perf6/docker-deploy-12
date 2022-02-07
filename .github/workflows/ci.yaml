@@ -1,0 +1,40 @@
+name: Test build and deploy
+on:
+  pull_request:
+    branches:
+      - dev
+
+env:
+  AWS_REGION: ap-south-1
+  CONTAINER_NAME: docker-deploy
+  ECS_SERVICE: deploy-1
+  ECS_CLUSTER: deploy
+  AWS_ACCESS_KEY_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  DB_HOST: localhost
+  DB_PORT: 5432
+  DB_PASS: local
+  DB_USER: local
+  DB_NAME: deploy_v1
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+      - name: start docker compose
+        run: docker-compose up -d
+      - name: wait for docker to start
+        run: sleep 30s
+        shell: bash
+      - name: initialize modules
+        run: npm i
+      - name: lint
+        run: npm run ci
+      - name: test
+        run: npm run test
+      - name: build
+        run: npm run build
+      - name: stop docker compose
+        run: docker-compose down
